@@ -39,7 +39,8 @@ export async function SiteNav() {
             alt="ScribeAI logo"
             width={56}
             height={56}
-            className="rounded-2xl shadow-glow"
+            className="h-14 w-14 rounded-2xl shadow-glow object-cover"
+            sizes="56px"
             priority
           />
           <div>
