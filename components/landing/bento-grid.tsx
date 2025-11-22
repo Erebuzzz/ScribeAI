@@ -69,11 +69,6 @@ export const BentoGrid = () => {
     },
   };
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
-  };
-
   return (
     <motion.div 
       className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-7xl mx-auto p-4"

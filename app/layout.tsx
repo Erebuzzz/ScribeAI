@@ -2,7 +2,6 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import { Inter, Inter_Tight } from "next/font/google";
 
-import { SiteNav } from "@/components/site-nav";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const interTight = Inter_Tight({ subsets: ["latin"], variable: "--font-inter-tight", display: "swap" });

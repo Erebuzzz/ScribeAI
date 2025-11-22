@@ -55,7 +55,6 @@ export function SessionRecorder({
   const bufferedTranscript = transcript.length > 0 ? transcript : fallbackTranscript;
   const renderedSummary = summary ?? fallbackSummary;
   const hasSummary = renderedSummary.trim().length > 0;
-  const numberFormatter = useMemo(() => new Intl.NumberFormat("en-US"), []);
   const indicatorClass = (active: boolean) =>
     `h-2 w-2 rounded-full ${active ? "bg-status-success" : "bg-status-error/80"}`;
 
