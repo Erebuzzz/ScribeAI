@@ -177,7 +177,8 @@ export function initSocketServer(server: HTTPServer) {
         },
       });
 
-      io.to(sessionId).emit("completed", { summary, transcript });
+      const downloadUrl = `/api/session/${sessionId}/transcript`;
+      io.to(sessionId).emit("completed", { summary, transcript, downloadUrl });
       sessionBuffers.delete(sessionId);
     });
 

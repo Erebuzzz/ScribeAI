@@ -4,24 +4,10 @@
       <stop offset="0%" style="stop-color:#635BFF;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#2AE8F0;stop-opacity:1" />
     </linearGradient>
-    
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    
-    <!-- Dark background -->
-    <rect id="darkBg" width="400" height="120" fill="#0D0D0F"/>
   </defs>
   
-  <!-- Background -->
-  <use href="#darkBg"/>
-  
-  <!-- Pixel-style icon with glow - 8-bit microphone/recording icon -->
-  <g transform="translate(10, 20)" filter="url(#glow)">
+  <!-- Pixel-style icon - 8-bit microphone/recording icon -->
+  <g transform="translate(10, 20)">
     <!-- Base shape - pixelated square border with sharp edges -->
     <rect x="0" y="0" width="80" height="80" fill="#16161A" stroke="url(#brandGradient)" stroke-width="4"/>
     
@@ -65,8 +51,8 @@
     <rect x="60" y="32" width="4" height="4" fill="#A29BFF" opacity="0.7"/>
   </g>
   
-  <!-- ScribeAI Text with glow -->
-  <g transform="translate(110, 35)" filter="url(#glow)">
+  <!-- ScribeAI Text -->
+  <g transform="translate(110, 35)">
     <text x="0" y="30" font-family="'Inter Tight', Arial, sans-serif" font-size="42" font-weight="700" fill="#FFFFFF" letter-spacing="-1">
       Scribe<tspan fill="url(#brandGradient)">AI</tspan>
     </text>
@@ -76,7 +62,4 @@
       AI-Powered Transcription
     </text>
   </g>
-  
-  <!-- Subtle outer glow border - sharp edges -->
-  <rect x="0" y="0" width="400" height="120" fill="none" stroke="url(#brandGradient)" stroke-width="0.5" opacity="0.3"/>
 </svg>

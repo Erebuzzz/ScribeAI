@@ -1,11 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { BentoGrid } from "@/components/landing/bento-grid";
+import { motion } from "framer-motion";
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-surface-base flex flex-col">
-      <header className="w-full border-b border-border-subtle bg-surface-panel/50 backdrop-blur-md sticky top-0 z-50">
+      <motion.header 
+        className="w-full border-b border-border-subtle bg-surface-panel/50 backdrop-blur-md sticky top-0 z-50"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
              <Image src="/logo.svg" alt="ScribeAI Logo" width={150} height={40} className="h-10 w-auto" priority />
@@ -27,17 +35,22 @@ export default function LandingPage() {
             </Link>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       <main className="flex-1 py-12">
         <BentoGrid />
       </main>
       
-      <footer className="border-t border-border-subtle py-8 bg-surface-panel mt-auto">
+      <motion.footer 
+        className="border-t border-border-subtle py-8 bg-surface-panel mt-auto"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+      >
         <div className="max-w-7xl mx-auto px-4 text-center text-text-tertiary text-sm">
           <p>© 2025 ScribeAI. Powered by Google Gemini.</p>
         </div>
-      </footer>
+      </motion.footer>
     </div>
   );
 }

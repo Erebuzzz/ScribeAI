@@ -287,6 +287,13 @@ export function useAudioStream({ sessionId, userId, initialStatus }: UseAudioStr
 
   const setupMediaRecorder = useCallback(
     async (stream: MediaStream) => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+
       mediaStreamRef.current = stream;
       ensureSocketConnected();
       const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
@@ -314,7 +321,8 @@ export function useAudioStream({ sessionId, userId, initialStatus }: UseAudioStr
         pendingResolveRef.current = null;
       };
 
-      recorder.start(1000);
+      // Chunk audio every 30 seconds as requested
+      recorder.start(30000);
       send({ type: "START" });
     },
     [ensureSocketConnected, send, sessionId, userId]

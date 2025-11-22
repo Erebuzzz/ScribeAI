@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
-import { Mic, Waves, Brain, Zap, Shield, Share2 } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { Mic, Waves, Brain, Zap, Shield } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface SpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -33,12 +34,16 @@ const SpotlightCard: React.FC<SpotlightCardProps> = ({
   };
 
   return (
-    <div
+    <motion.div
       ref={divRef}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={`relative overflow-hidden bg-surface-panel border border-border-subtle shadow-surface transition-all duration-300 hover:shadow-glow/20 ${className}`}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       {...props}
     >
       <div
@@ -49,22 +54,48 @@ const SpotlightCard: React.FC<SpotlightCardProps> = ({
         }}
       />
       <div className="relative h-full">{children}</div>
-    </div>
+    </motion.div>
   );
 };
 
 export const BentoGrid = () => {
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-7xl mx-auto p-4">
+    <motion.div 
+      className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-7xl mx-auto p-4"
+      variants={container}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true }}
+    >
       {/* Hero Card - Spans 2 cols on desktop */}
       <SpotlightCard className="md:col-span-2 md:row-span-2 min-h-[400px] flex flex-col justify-center p-8 group">
         <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
           <Mic className="w-32 h-32 text-brand-accent" />
         </div>
         <div className="relative z-10 space-y-6">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 bg-brand-accent/10 border border-brand-accent/20 text-brand-accent text-xs font-medium uppercase tracking-wider w-fit">
+          <motion.div 
+            className="inline-flex items-center space-x-2 px-3 py-1 bg-brand-accent/10 border border-brand-accent/20 text-brand-accent text-xs font-medium uppercase tracking-wider w-fit"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <span>Attack Capital Assignment</span>
-          </div>
+          </motion.div>
           <h2 className="text-4xl md:text-6xl font-display font-bold text-text-primary leading-tight">
             Capture. <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-brand-cyan">
@@ -117,9 +148,13 @@ export const BentoGrid = () => {
             Advanced prompt stacks analyze your meetings to extract key decisions, action items, and owners instantly.
           </p>
         </div>
-        <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+        <motion.div 
+          className="absolute -right-10 -bottom-10 opacity-10 group-hover:opacity-20 transition-opacity duration-500"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+        >
            <Brain className="w-64 h-64 text-brand-accent" />
-        </div>
+        </motion.div>
       </SpotlightCard>
 
       {/* Feature 4: Secure */}
@@ -134,6 +169,6 @@ export const BentoGrid = () => {
           </p>
         </div>
       </SpotlightCard>
-    </div>
+    </motion.div>
   );
 };

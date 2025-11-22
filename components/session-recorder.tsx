@@ -1,16 +1,8 @@
 "use client";
 
-import { Monitor, PauseCircle, PlayCircle, RotateCcw, Square } from "lucide-react";
+import { Monitor, PauseCircle, PlayCircle, RotateCcw, Square, Download } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAudioStream, type RecorderStatus } from "@/hooks/useAudioStream";
-
-type QuotaMetric = {
-  label: string;
-  limit: number;
-  used: number;
-  remaining: number;
-  units: string;
-};
 
 interface SessionRecorderProps {
   sessionId: string;
@@ -19,12 +11,6 @@ interface SessionRecorderProps {
   initialSummary?: string | null;
   initialTranscript?: string[];
   initialStatus?: RecorderStatus;
-  geminiQuota?: {
-    tierLabel: string;
-    rpm: QuotaMetric;
-    tpm: QuotaMetric;
-    rpd: QuotaMetric;
-  } | null;
 }
 
 /**
@@ -37,7 +23,6 @@ export function SessionRecorder({
   initialSummary,
   initialTranscript,
   initialStatus = "IDLE",
-  geminiQuota,
 }: SessionRecorderProps) {
   const {
     startMicrophone,
@@ -137,6 +122,15 @@ export function SessionRecorder({
           >
             <RotateCcw className="h-4 w-4" /> Restart session
           </button>
+          <a
+            href={`/api/session/${sessionId}/transcript`}
+            download
+            className={`inline-flex items-center gap-2 rounded-button border border-border-subtle bg-surface-base/60 px-4 py-2 text-sm text-text-primary transition hover:border-brand-accent ${
+              !hasSummary ? "pointer-events-none opacity-50" : ""
+            }`}
+          >
+            <Download className="h-4 w-4" /> Export
+          </a>
         </div>
 
         {error && <p className="text-sm text-status-error">{error}</p>}
@@ -176,34 +170,6 @@ export function SessionRecorder({
             <p className="mt-3 text-sm text-text-tertiary">Summary will appear after you stop recording.</p>
           )}
         </section>
-
-        {geminiQuota && (
-          <section className="rounded-card border border-border-subtle bg-surface-panel/80 p-5 shadow-surface">
-            <p className="text-xs uppercase tracking-[0.4em] text-text-tertiary">Gemini quota</p>
-            <h3 className="mt-2 font-display text-xl text-text-primary">{geminiQuota.tierLabel}</h3>
-            <div className="mt-5 space-y-4">
-              {[geminiQuota.rpm, geminiQuota.tpm, geminiQuota.rpd].map((metric) => {
-                const progress = metric.limit > 0 ? Math.min(100, (metric.used / metric.limit) * 100) : 0;
-                return (
-                  <div key={metric.label} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm text-text-secondary">
-                      <span>{metric.label}</span>
-                      <span className="font-semibold text-text-primary">
-                        {numberFormatter.format(metric.used)} / {numberFormatter.format(metric.limit)} {metric.units}
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-surface-base/70">
-                      <div className="h-2 rounded-full bg-brand-accent" style={{ width: `${progress}%` }} />
-                    </div>
-                    <p className="text-xs text-text-tertiary">
-                      Remaining {numberFormatter.format(metric.remaining)} {metric.units}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
       </aside>
     </div>
   );

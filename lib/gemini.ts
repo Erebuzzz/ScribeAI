@@ -29,7 +29,7 @@ export async function streamGeminiTranscription(
     role: "user" as const,
     parts: [
       {
-        text: "Transcribe the following audio chunk with speaker change hints if possible.",
+        text: "Transcribe the speech in the following audio chunk. If there is no clear speech, return nothing. Do not hallucinate. Label speakers as Speaker 1, Speaker 2, etc. only if distinct voices are detected.",
       },
       {
         inlineData: {
