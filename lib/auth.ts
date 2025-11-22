@@ -1,11 +1,28 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { BetterAuth } from "better-auth";
-import { PrismaAdapter } from "@better-auth/prisma-adapter";
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/db";
 
-export const auth = new BetterAuth({
-  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-  adapters: [PrismaAdapter(prisma)],
+const adapter = prismaAdapter(prisma, {
+  provider: "postgresql",
+});
+
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+export const auth = betterAuth({
+  baseURL: appUrl,
+  trustedOrigins: [appUrl, "http://127.0.0.1:3000", "http://0.0.0.0:3000"],
+  database: adapter,
+  session: {
+    modelName: "AuthSession",
+  },
+  account: {
+    modelName: "AuthAccount",
+  },
+  verification: {
+    modelName: "AuthVerification",
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
@@ -15,7 +32,9 @@ export const auth = new BetterAuth({
 export type AuthSession = Awaited<ReturnType<typeof auth.api.getSession>>;
 
 export async function requireUser() {
-  const session = await auth.api.getSession();
+  const session = await auth.api.getSession({
+    headers: headers(),
+  });
   if (!session?.user) {
     redirect("/signin");
   }

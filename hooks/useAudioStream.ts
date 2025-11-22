@@ -65,10 +65,31 @@ export function useAudioStream({ sessionId, userId }: UseAudioStreamOptions): Re
 
   useEffect(() => {
     const url = process.env.NEXT_PUBLIC_SOCKET_URL ?? window.location.origin;
-    const socket = io(url, { transports: ["websocket"], autoConnect: true });
+    const socket = io(url, {
+      autoConnect: true,
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+      reconnectionAttempts: 5,
+    });
     socketRef.current = socket;
 
     socket.emit("join-session", { sessionId, userId });
+
+    socket.on("connect", () => {
+      console.info("Socket connected", socket.id, socket.io.opts); // helps diagnose host/transport issues
+      setError(undefined);
+    });
+
+    socket.on("connect_error", (connErr) => {
+      console.error("Socket connection error", connErr);
+      setError(
+        connErr instanceof Error
+          ? connErr.message
+          : typeof connErr === "string"
+            ? connErr
+            : "Unable to connect to realtime server"
+      );
+    });
 
     socket.on("transcription-token", ({ token }) => {
       setTokens((prev) => [...prev, token]);
@@ -90,7 +111,13 @@ export function useAudioStream({ sessionId, userId }: UseAudioStreamOptions): Re
     });
 
     socket.on("transcription-error", (payload) => {
-      setError(typeof payload === "string" ? payload : "Transcription failed");
+      if (typeof payload === "string") {
+        setError(payload);
+      } else if (payload && typeof payload === "object" && "message" in payload) {
+        setError(String((payload as { message?: string }).message ?? "Transcription failed"));
+      } else {
+        setError("Transcription failed");
+      }
     });
 
     const handleBeforeUnload = () => {
@@ -153,17 +180,56 @@ export function useAudioStream({ sessionId, userId }: UseAudioStreamOptions): Re
     [sessionId, userId]
   );
 
+  const normalizeError = (err: unknown, fallback: string) => {
+    if (err instanceof Error) {
+      return err.message;
+    }
+    if (typeof err === "string") {
+      return err;
+    }
+    return fallback;
+  };
+
   const requestMicrophone = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    await setupMediaRecorder(stream);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setError(undefined);
+      await setupMediaRecorder(stream);
+    } catch (err) {
+      setError(normalizeError(err, "Microphone permission was denied."));
+    }
   }, [setupMediaRecorder]);
 
   const requestTab = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      audio: { echoCancellation: true },
-      video: false,
-    });
-    await setupMediaRecorder(stream);
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 1 },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          suppressLocalAudioPlayback: false,
+        } as MediaTrackConstraints,
+      });
+
+      const audioTracks = stream.getAudioTracks();
+      if (!audioTracks.length) {
+        throw new Error("Browser did not provide tab audio. Choose a tab and enable \"Share audio\".");
+      }
+
+      const audioOnlyStream = new MediaStream(audioTracks);
+      setError(undefined);
+      await setupMediaRecorder(audioOnlyStream);
+
+      // Stop the captured video track so we are not recording the screen unnecessarily.
+      stream.getVideoTracks().forEach((track) => track.stop());
+    } catch (err) {
+      setError(
+        normalizeError(
+          err,
+          "Unable to capture tab audio. Make sure you pick a tab and enable the 'Share audio' checkbox."
+        )
+      );
+    }
   }, [setupMediaRecorder]);
 
   const pause = useCallback(() => {
