@@ -7,13 +7,13 @@ import { streamGeminiTranscription, summarizeTranscript } from "@/lib/gemini";
 const MAX_QUEUE_SIZE = 32;
 
 const joinSessionSchema = z.object({
-  sessionId: z.string().cuid(),
-  userId: z.string().cuid(),
+  sessionId: z.string(),
+  userId: z.string(),
 });
 
 const audioChunkSchema = z.object({
-  sessionId: z.string().cuid(),
-  userId: z.string().cuid(),
+  sessionId: z.string(),
+  userId: z.string(),
   chunk: z.instanceof(Buffer).or(z.any()),
   start: z.number().nonnegative(),
   end: z.number().nonnegative(),
@@ -21,8 +21,8 @@ const audioChunkSchema = z.object({
 });
 
 const stopSessionSchema = z.object({
-  sessionId: z.string().cuid(),
-  userId: z.string().cuid(),
+  sessionId: z.string(),
+  userId: z.string(),
   audioUrl: z.string().url().optional(),
 });
 
