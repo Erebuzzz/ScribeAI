@@ -45,8 +45,8 @@ const config: Config = {
         glow: "0 0 20px #635BFF55",
       },
       borderRadius: {
-        card: "12px",
-        button: "8px",
+        card: "0px",
+        button: "0px",
       },
     },
   },

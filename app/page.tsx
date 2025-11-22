@@ -1,72 +1,43 @@
 import Link from "next/link";
-import { Brain, Mic, Waves } from "lucide-react";
-
-const features = [
-  {
-    icon: Mic,
-    title: "Dual-source capture",
-    body: "Switch between mic and tab share via MediaRecorder timeslices. Every second of audio ships to Gemini in order.",
-  },
-  {
-    icon: Waves,
-    title: "Resilient streaming",
-    body: "Buffered Socket.io queues smooth out weak connections so 60-minute meetings never lose a chunk.",
-  },
-  {
-    icon: Brain,
-    title: "AI-native summaries",
-    body: "Gemini prompt stacks emit key decisions, owners, and action items as soon as you stop recording.",
-  },
-];
+import Image from "next/image";
+import { BentoGrid } from "@/components/landing/bento-grid";
 
 export default function LandingPage() {
   return (
-    <main className="space-y-10">
-      <section className="overflow-hidden rounded-card border border-border-subtle bg-surface-panel/90 p-10 shadow-surface">
-        <div className="relative z-10 max-w-3xl space-y-6">
-          <p className="text-xs uppercase tracking-[0.6em] text-text-secondary">Attack Capital Assignment</p>
-          <h1 className="font-display text-5xl leading-tight text-text-primary">
-            ScribeAI
-            <span className="mt-2 block text-lg font-normal text-text-secondary">
-              Streaming-first meeting intelligence powered by Gemini
-            </span>
-          </h1>
-          <p className="text-base text-text-secondary">
-            Capture microphone and tab audio, stream it to Google Gemini for live transcripts, and receive structured summaries
-            instantly. Built with Next.js 14, Better Auth, Prisma, and Socket.io for resilient, low-latency collaboration.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center rounded-button bg-brand-accent px-6 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-brand-hover"
-            >
-              Launch dashboard
-            </Link>
-            <Link
+    <div className="min-h-screen bg-surface-base flex flex-col">
+      <header className="w-full border-b border-border-subtle bg-surface-panel/50 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+             <Image src="/logo.svg" alt="ScribeAI Logo" width={150} height={40} className="h-10 w-auto" priority />
+          </div>
+          <div className="flex items-center gap-6">
+             <Link
               href="https://ai.google.dev/gemini-api"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center rounded-button border border-border-subtle px-6 py-3 text-sm font-semibold text-text-primary hover:border-brand-accent"
+              className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
             >
-              Gemini Docs
+              Docs
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center px-5 py-2 text-sm font-semibold text-white transition-all bg-brand-accent hover:bg-brand-hover shadow-glow hover:shadow-glow/50"
+            >
+              Launch App
             </Link>
           </div>
         </div>
-        <div className="pointer-events-none absolute inset-0 -z-0 bg-gradient-to-br from-brand-accent/30 via-transparent to-brand-cyan/20" />
-      </section>
+      </header>
 
-      <section className="grid gap-5 md:grid-cols-3">
-        {features.map((feature) => (
-          <article
-            key={feature.title}
-            className="rounded-card border border-border-subtle bg-surface-raised/80 p-6 shadow-surface backdrop-blur"
-          >
-            <feature.icon className="h-10 w-10 text-brand-accent" />
-            <h3 className="mt-4 font-display text-xl text-text-primary">{feature.title}</h3>
-            <p className="mt-2 text-sm text-text-secondary">{feature.body}</p>
-          </article>
-        ))}
-      </section>
-    </main>
+      <main className="flex-1 py-12">
+        <BentoGrid />
+      </main>
+      
+      <footer className="border-t border-border-subtle py-8 bg-surface-panel mt-auto">
+        <div className="max-w-7xl mx-auto px-4 text-center text-text-tertiary text-sm">
+          <p>© 2025 ScribeAI. Powered by Google Gemini.</p>
+        </div>
+      </footer>
+    </div>
   );
 }

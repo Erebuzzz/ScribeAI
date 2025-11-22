@@ -35,12 +35,11 @@ export async function SiteNav() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <Image
-            src="/app_logo.png"
+            src="/logo.svg"
             alt="ScribeAI logo"
-            width={56}
-            height={56}
-            className="h-14 w-14 rounded-2xl shadow-glow object-cover"
-            sizes="56px"
+            width={140}
+            height={42}
+            className="h-14 w-auto shadow-glow object-contain"
             priority
           />
           <div>
