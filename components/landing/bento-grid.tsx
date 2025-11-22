@@ -2,9 +2,10 @@
 
 import React, { useRef, useState } from "react";
 import { Mic, Waves, Brain, Zap, Shield } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 
-interface SpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
+// Fix: Extend HTMLMotionProps instead of React.HTMLAttributes to avoid type conflicts
+interface SpotlightCardProps extends HTMLMotionProps<"div"> {
   children: React.ReactNode;
   className?: string;
 }
