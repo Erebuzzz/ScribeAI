@@ -42,8 +42,7 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
 
 ## Streaming Pipeline (Mermaid)
 
-```mermaid
----
+```mermaid---
 config:
   layout: elk
 ---
@@ -53,28 +52,24 @@ flowchart TB
         Mic["Mic / Tab Audio (MediaRecorder)"]
         Hook["useAudioStream hook (XState status + sockets)"]
         UI["SessionRecorder UI (controls + tokens)"]
- end
+  end
  subgraph Server["Node server + Socket.io"]
     direction TB
         Socket["Socket.io gateway (join-session, audio-stream, stop-session)"]
-        Queue["Session buffer - bounded FIFO per session"]
- end
-    
-    %% Connections
-    Mic -- "30s audio chunks" --> Hook
+        Queue["Session buffer bounded FIFO per session"]
+  end
+    Mic -- 30s audio chunks --> Hook
     Hook -- "emit 'audio-stream' with ArrayBuffer" --> Socket
-    Socket -- "enqueue chunk" --> Queue
-    Queue -- "processQueue - one chunk at a time" --> Gemini["Google Gemini API - streamGeminiTranscription / summarizeTranscript"]
-    
-    Gemini -- "tokens + text" --> Socket
-    Socket -- "transcription-token / transcription-chunk" --> UI
-    Socket -- "create TranscriptSegment" --> DB["Postgres via Prisma - Session + TranscriptSegment"]
-    
+    Socket -- enqueue chunk --> Queue
+    Queue -- processQueue\none chunk at a time --> Gemini["Google Gemini AP streamGeminiTranscription / summarizeTranscript"]
+    Gemini -- tokens + text --> Socket
+    Socket -- "transcription-token\ntranscription-chunk" --> UI
+    Socket -- create TranscriptSegment --> DB["Postgres via Prisma Session + TranscriptSegment"]
     UI -- "stop-session" --> Socket
-    Socket -- "load ordered segments" --> DB
-    Socket -- "summarizeTranscript" --> Gemini
-    Gemini -- "summary text" --> Socket
-    Socket -- "state COMPLETED + downloadUrl" --> UI
+    Socket -- load ordered segments --> DB
+    Socket -- summarizeTranscript --> Gemini
+    Gemini -- summary text --> Socket
+    Socket -- state COMPLETED + downloadUrl --> UI
 ```
 
 ## Architecture comparison
