@@ -5,6 +5,10 @@ import { useMachine } from "@xstate/react";
 import { createMachine } from "xstate";
 import { io, type Socket } from "socket.io-client";
 
+/**
+ * High level lifecycle state for a recording session.
+ * Mirrors what the backend persists on the `Session` row.
+ */
 export type RecorderStatus = "IDLE" | "RECORDING" | "PAUSED" | "PROCESSING" | "COMPLETED";
 
 export interface UseAudioStreamOptions {
@@ -30,7 +34,13 @@ interface RecorderControls {
 }
 
 /**
- * Hook that wires MediaRecorder to Socket.io streaming for live transcription.
+ * Client hook that connects the browser's MediaRecorder API to the
+ * Socket.io backend for streaming transcription.
+ *
+ * It owns:
+ * - media lifecycle (mic / tab audio)
+ * - connection to the Socket.io room for a given `sessionId`
+ * - local buffering of tokens, transcript lines, and the final summary.
  */
 export function useAudioStream({ sessionId, userId, initialStatus }: UseAudioStreamOptions): RecorderControls {
   const recorderMachine = useMemo(

@@ -1,16 +1,25 @@
 # ScribeAI
 
-AI-powered meeting assistant that captures microphone or tab-share audio, streams it to Google Gemini for real-time transcription, and persists the outputs in Postgres via Prisma. Built to satisfy the Attack Capital Assignment 3 specs with Better Auth, Socket.io, and a buffering pipeline capable of hour-long sessions.
+ScribeAI is a small but opinionated meeting assistant that captures microphone or tab audio, streams it to Google Gemini for transcription, and stores the results in Postgres through Prisma. It was built for the Attack Capital Assignment 3 spec and then polished into something that feels comfortable to use for real calls.
+
+The project is deployed in a split setup:
+
+- Frontend on Vercel: <https://scribe-ai-zeta.vercel.app/>
+- Backend on Render: <https://scribeai-backend-r9er.onrender.com/>
+
+If you want to say hello or report a bug you can reach me at `kshitiz23kumar@gmail.com`.
 
 ## Features
 
-- **Dual-source audio capture** using `MediaRecorder` with 1-second `timeslice` across both `getUserMedia` (mic) and `getDisplayMedia` (tab/system audio).
-- **Custom Node + Socket.io server** that buffers binary chunks, streams them to Gemini with backpressure, and persists transcript segments.
-- **Better Auth** integration that protects `/dashboard` and `/session/[id]`, exposing server actions that only run for authenticated users.
-- **Prisma + Postgres schema** for `User`, `Session`, and `TranscriptSegment`, enabling summaries and history views.
-- **Stateful UI** built on a reducer-driven hook (`useAudioStream`) that survives tab suspensions via `localStorage` and `beforeunload` finalization.
+- Dual source audio capture using `MediaRecorder` for both `getUserMedia` (mic) and `getDisplayMedia` (tab audio).
+- Custom Node plus Socket.io server that buffers binary chunks, streams them to Gemini with a small in memory queue, and persists transcript segments.
+- Better Auth integration that protects `/dashboard` and `/session/[id]` so only authenticated users can start sessions.
+- Prisma + Postgres schema for `User`, `Session`, and `TranscriptSegment`, which powers summaries, history views, and exports.
+- Stateful UI built on the `useAudioStream` hook, which survives tab suspensions thanks to `localStorage` and a small XState machine.
 
 ## Getting Started
+
+The dev script starts both Next.js and the custom Node server so you only need a single command.
 
 ```bash
 pnpm install
@@ -20,54 +29,76 @@ pnpm dev
 
 ### Environment Variables
 
-```
+The exact values will differ per environment, but the shape looks like this.
+
+```bash
 DATABASE_URL=postgresql://user:pass@localhost:5432/scribeai
+DIRECT_URL=postgresql://user:pass@localhost:5432/scribeai
 GEMINI_API_KEY=your-google-api-key
 GEMINI_MODEL=models/gemini-1.5-pro
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
 ```
 
-## Architecture Comparison Table
-
-| Criteria | Streaming (MediaRecorder + Socket.io) | Post-recording Upload |
-| --- | --- | --- |
-| Latency | ~1-2s token latency via Gemini streaming | Entire duration before insight (>1hr worst-case) |
-| Reliability | Buffered queue with overflow signaling; chunks retried individually | Single large upload prone to failure/resume complexity |
-| Resource Usage | Constant memory footprint; chunks discarded after persistence | Client holds full recording until upload completes |
-| User Feedback | Live tokens, pause/resume, real-time status to UI | Binary feedback: "uploading" vs "done" |
-| Cost Control | Early stop prevents wasted inference minutes | You pay for whole file even if decisions already made |
-
-## Data Flow Diagram
+## Streaming Pipeline (Mermaid)
 
 ```mermaid
-sequenceDiagram
-	autonumber
-	participant Mic as Mic/Tab Audio
-	participant Browser
-	participant Socket as Node + Socket.io
-	participant Gemini
-	participant DB as Postgres
-	Mic->>Browser: MediaRecorder chunk (1s)
-	Browser->>Socket: emit("audio-stream", ArrayBuffer)
-	Socket->>Gemini: streamGenerateContent(chunk)
-	Gemini-->>Socket: transcription tokens
-	Socket-->>Browser: transcription-token/chunk events
-	Socket->>DB: Prisma.save(TranscriptSegment)
-	Browser->>Socket: stop-session
-	Socket->>Gemini: meeting summary prompt
-	Socket->>DB: persist summary
-	Socket-->>Browser: completed(summary)
+---
+config:
+  layout: elk
+---
+flowchart TB
+ subgraph Client["Browser / Next.js app"]
+    direction TB
+        Mic["Mic / Tab Audio (MediaRecorder)"]
+        Hook["useAudioStream hook (XState status + sockets)"]
+        UI["SessionRecorder UI (controls + tokens)"]
+ end
+ subgraph Server["Node server + Socket.io"]
+    direction TB
+        Socket["Socket.io gateway (join-session, audio-stream, stop-session)"]
+        Queue["Session buffer - bounded FIFO per session"]
+ end
+    
+    %% Connections
+    Mic -- "30s audio chunks" --> Hook
+    Hook -- "emit 'audio-stream' with ArrayBuffer" --> Socket
+    Socket -- "enqueue chunk" --> Queue
+    Queue -- "processQueue - one chunk at a time" --> Gemini["Google Gemini API - streamGeminiTranscription / summarizeTranscript"]
+    
+    Gemini -- "tokens + text" --> Socket
+    Socket -- "transcription-token / transcription-chunk" --> UI
+    Socket -- "create TranscriptSegment" --> DB["Postgres via Prisma - Session + TranscriptSegment"]
+    
+    UI -- "stop-session" --> Socket
+    Socket -- "load ordered segments" --> DB
+    Socket -- "summarizeTranscript" --> Gemini
+    Gemini -- "summary text" --> Socket
+    Socket -- "state COMPLETED + downloadUrl" --> UI
 ```
 
-## Long-session Scalability (200 words)
+## Architecture comparison
 
-Keeping latency low for 60-minute sessions requires guarding every hop. On the client, `MediaRecorder` emits deterministic 1-second blobs, so memory never grows beyond a couple of chunks. We immediately convert each blob to an `ArrayBuffer` and fire-and-forget through Socket.io, but also persist recorder state in `localStorage`. If the tab sleeps, the hook resumes by rejoining the same session ID, ensuring we do not generate duplicate `Session` rows. On the server, each session owns a FIFO queue capped at 32 chunks. Instead of dropping audio when Gemini slows, we emit a `buffer-overflow` warning back to the client while the queue drains asynchronously. With `maxHttpBufferSize` raised to 10 MB, we can comfortably hold 30–40 seconds of backlog without hitting Node’s memory ceiling. Transcript chunks are flushed into Postgres as soon as Gemini returns text, so replaying or summarizing does not require loading hourlong buffers into RAM. For summarization, we stitch the ordered segments into a single string, but only at `stop-session`, meaning the hot path remains lightweight. Finally, Socket.io rooms scope broadcasts per session, preventing noisy clients from overwhelming others. This combination keeps CPU bounded, allows horizontal scaling by sharding sessions across instances, and gives operators visibility when inference throughput becomes a bottleneck.
+The core design choice is to stream audio chunks over Socket.io instead of uploading one large recording at the end.
 
-## Constraint Checklist
+| Criteria | Streaming (MediaRecorder + Socket.io) | Post recording upload |
+| --- | --- | --- |
+| Latency | First tokens within a few seconds and steady updates while speaking | No insight until the entire recording has been uploaded and processed |
+| Reliability | Small chunks flow through a bounded queue, the server can warn about backlog, and a single failed chunk does not lose the whole meeting | A single network hiccup can corrupt or stall a very large upload, and resuming correctly is harder |
+| Resource usage | The browser holds at most the current chunk, the server flushes text to Postgres as soon as Gemini responds | The client keeps the full recording in memory or disk until the upload finishes |
+| User feedback | Live transcript, visible state machine (recording, paused, processing, completed) and a summary that appears as soon as Gemini finishes | Simple progress bar with a long quiet period where it is not obvious that anything is happening |
+| Cost control | You can stop early when the important part of the conversation is done and avoid paying for the rest of the audio | You usually send the entire file even if most of it is silence or small talk |
 
-1. **Better Auth:** Configured in `lib/auth.ts` with Prisma adapter.
-2. **Next.js App Router:** App directory structure with server components.
-3. **Tab Audio:** `useAudioStream` leverages `navigator.mediaDevices.getDisplayMedia` for system audio.
-4. **Custom Node Server:** `server.ts` boots Next + Socket.io.
-5. **Gemini Prompting:** `lib/gemini.ts` optimizes both transcription tokens and diarization-focused summaries.
+## Long session scalability
+
+Handling sessions that run close to an hour is mainly a matter of controlling memory and keeping the hot path predictable. On the client side `MediaRecorder` is configured to emit deterministic thirty second blobs. Each blob is turned into an `ArrayBuffer` and sent to the server, then the browser can forget about it. The hook keeps only lightweight state: the current status from the XState machine, a running list of tokens for a nice streaming effect, and the buffered transcript that was already persisted in the database.
+
+On the server each session gets a small FIFO queue that holds pending audio chunks. The queue size is capped so it cannot grow without bound. When Gemini responds, the text is written to Postgres as a `TranscriptSegment` row and the corresponding chunk is dropped from memory. The summary step only happens when the client sends `stop-session`. At that point the server joins the ordered segments into a single string and calls Gemini once more with a focused summarization prompt. This keeps the realtime streaming loop lean while still giving you a rich summary at the end. Horizontal scaling is straightforward because sessions are independent and attach to their own Socket.io room.
+
+## Constraint checklist
+
+1. Better Auth configured in `lib/auth.ts` with Prisma adapter.
+2. Next.js App Router layout under `app/` with server components for data fetching.
+3. Tab audio capture implemented in `useAudioStream` via `navigator.mediaDevices.getDisplayMedia`.
+4. Custom Node server in `server.ts` that boots Next and the Socket.io transport.
+5. Gemini integration in `lib/gemini.ts` for both streaming transcription and post processing summaries.

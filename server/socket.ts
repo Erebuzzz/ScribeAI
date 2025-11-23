@@ -31,6 +31,8 @@ type SessionBuffer = {
   processing: boolean;
 };
 
+// In memory buffer that maps a session id to its pending audio chunks.
+// Each session is processed FIFO with a very small bounded queue.
 const sessionBuffers = new Map<string, SessionBuffer>();
 
 function getOrCreateBuffer(sessionId: string): SessionBuffer {
@@ -41,6 +43,11 @@ function getOrCreateBuffer(sessionId: string): SessionBuffer {
   return sessionBuffers.get(sessionId)!;
 }
 
+/**
+ * Pulls the next buffered audio chunk for a session, sends it to Gemini
+ * for transcription, and emits incremental tokens and committed chunks
+ * back to the connected clients.
+ */
 async function processQueue(io: Server, sessionId: string, mimeType: string) {
   const bufferState = sessionBuffers.get(sessionId);
   if (!bufferState || bufferState.processing) {
@@ -84,6 +91,10 @@ async function processQueue(io: Server, sessionId: string, mimeType: string) {
   }
 }
 
+/**
+ * Attaches a Socket.io server to the HTTP server and wires
+ * up the streaming protocol for join, audio chunks, and stop events.
+ */
 export function initSocketServer(server: HTTPServer) {
   const io = new Server(server, {
     cors: {
