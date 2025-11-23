@@ -12,7 +12,7 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export const auth = betterAuth({
   baseURL: appUrl,
-  trustedOrigins: [appUrl, "http://127.0.0.1:3000", "http://0.0.0.0:3000"],
+  trustedOrigins: [appUrl, "http://127.0.0.1:3000", "http://0.0.0.0:3000", "https://scribeai-backend-r9er.onrender.com", "https://scribe-ai-zeta.vercel.app/"],
   database: adapter,
   session: {
     modelName: "AuthSession",
