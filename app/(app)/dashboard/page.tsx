@@ -93,7 +93,10 @@ export default async function DashboardPage() {
               <p className="text-sm text-text-secondary">
                 {session.summary?.slice(0, 180) ?? "Awaiting summary..."}
               </p>
-              <p className="text-xs text-text-tertiary">{created.toLocaleDateString()} · {created.toLocaleTimeString()}</p>
+              <p className="text-xs text-text-tertiary">
+                {created.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })} .{""}
+                {created.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })}
+              </p>
               <div className="flex flex-wrap justify-between gap-3">
                 <Link
                   href={`/session/${session.id}`}
