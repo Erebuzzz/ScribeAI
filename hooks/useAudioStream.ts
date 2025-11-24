@@ -167,7 +167,7 @@ export function useAudioStream({ sessionId, userId, initialStatus }: UseAudioStr
     
     const socket = io(url, {
       autoConnect: false, // Keep this false
-      withCredentials: true,
+      withCredentials: false,
       transports: ["websocket", "polling"],
       reconnectionAttempts: 5,
     });
