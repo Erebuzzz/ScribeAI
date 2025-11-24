@@ -98,7 +98,12 @@ async function processQueue(io: Server, sessionId: string, mimeType: string) {
 export function initSocketServer(server: HTTPServer) {
   const io = new Server(server, {
     cors: {
-      origin: process.env.NEXT_PUBLIC_APP_URL ?? "*",
+      origin: [
+        process.env.NEXT_PUBLIC_APP_URL as string, 
+        "http://localhost:3000",
+        "https://scribe-ai-zeta.vercel.app", 
+        "https://scribeai-backend-r9er.onrender.com"
+      ].filter(Boolean),
       methods: ["GET", "POST"],
     },
     maxHttpBufferSize: 1e7,
