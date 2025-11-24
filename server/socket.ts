@@ -105,6 +105,7 @@ export function initSocketServer(server: HTTPServer) {
         "https://scribeai-backend-r9er.onrender.com"
       ].filter(Boolean),
       methods: ["GET", "POST"],
+      credentials: true,
     },
     maxHttpBufferSize: 1e7,
   });
